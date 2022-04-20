@@ -25,7 +25,7 @@ export async function getAllPools(blockNumber) {
   const getPoolsQuery = gql`
     query getpools($blocknumber: Int!) {
       pools(
-        first: 1000
+        first: 5
         orderDirection: desc
         orderBy: totalLiquidity
         block: { number: $blocknumber }

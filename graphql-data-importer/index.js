@@ -1,7 +1,7 @@
 import { google } from "googleapis";
 import moment from "moment-timezone";
 import { getBlockForTimestamp, getAllPools } from "./graph.js";
-import { getAuthorization } from "./sheets.js";
+import { getAuthorization, getBottomRowIndex } from "./sheets.js";
 
 importDataAndWrite();
 
@@ -11,14 +11,14 @@ async function importDataAndWrite() {
 }
 
 async function addSpreadsheetRows(auth) {
-  //  const SPREADSHEET_ID = "15q48_JW0HMCWK56qCKZD7M5Kh0rBq5GOcsuMZt9AJYw"; //TEST POOL SHEET
+  const SPREADSHEET_ID = "16T1WK89Q1fxXYkJ79cz7NCGatVKKgZUCkOmGUyQ5YZQ"; //TEST POOL SHEET
 
-  const SPREADSHEET_ID = "1YGyVDUQuJoQRj2sUMpWnCO-8O_fcVW02-fhdb9Uf2_A"; //LIVE DATA SHEET ADDRESS
+  //const SPREADSHEET_ID = "1YGyVDUQuJoQRj2sUMpWnCO-8O_fcVW02-fhdb9Uf2_A"; //LIVE DATA SHEET ADDRESS
 
   const SHEET_NAME = "Database";
 
   console.log("create sheets object");
-  const sheets = google.sheets({ version: "v4", auth });
+  const appAuthorization = google.sheets({ version: "v4", auth });
 
   // RUN FOR DATE ENTERED
   //const startDate = new Date(2022, 3, 1);
@@ -43,17 +43,32 @@ async function addSpreadsheetRows(auth) {
 
   const pools = await getAllPools(blockNumber);
 
-  const sheetRequest = { spreadsheetId: SPREADSHEET_ID };
-  const sheetProperties = await sheets.spreadsheets.get(sheetRequest);
-  //  console.log(sheetProperties);
-  const databaseSheetProperites = sheetProperties.data.sheets.find(
+  const spreadsheetRequest = { spreadsheetId: SPREADSHEET_ID };
+  const spreadsheetProperties = await appAuthorization.spreadsheets.get(
+    spreadsheetRequest
+  );
+  //console.log(spreadsheetProperties);
+
+  const databaseSheetProperites = spreadsheetProperties.data.sheets.find(
     (sheet) => sheet.properties.title === SHEET_NAME
   );
+  //  console.log(databaseSheetProperites);
+
   const databaseSheetId = databaseSheetProperites.properties.sheetId;
-  console.log(databaseSheetId);
-  const endRowIndex = databaseSheetProperites.basicFilter.range.endRowIndex;
+
+  const endRowIndex =
+    databaseSheetProperites.properties.gridProperties.rowCount;
   console.log("sheetID, endRow ", databaseSheetId, endRowIndex);
 
+  const startingAppendRow = await getBottomRowIndex(
+    appAuthorization,
+    SPREADSHEET_ID,
+    SHEET_NAME,
+    endRowIndex
+  );
+  console.log("startingAppendRow ", startingAppendRow);
+
+  //For this funciton to work correctly at least one blank row at the bottom of the sheet is required
   const copyPasteResource = {
     requests: [
       {
@@ -67,14 +82,14 @@ async function addSpreadsheetRows(auth) {
         copyPaste: {
           source: {
             sheetId: databaseSheetId,
-            startRowIndex: 1,
-            endRowIndex: 2,
+            startRowIndex: startingAppendRow - 1,
+            endRowIndex: startingAppendRow,
             startColumnIndex: 0,
           },
           destination: {
             sheetId: databaseSheetId,
-            startRowIndex: endRowIndex,
-            endRowIndex: endRowIndex + pools.length,
+            startRowIndex: startingAppendRow + 1,
+            endRowIndex: startingAppendRow + 1 + pools.length,
           },
           pasteType: "PASTE_FORMULA",
           pasteOrientation: "NORMAL",
@@ -83,12 +98,14 @@ async function addSpreadsheetRows(auth) {
     ],
   };
 
-  //console.log(copyPasteResource);
+  console.table(copyPasteResource);
 
-  const result = await sheets.spreadsheets.batchUpdate({
+  const result = await appAuthorization.spreadsheets.batchUpdate({
     spreadsheetId: SPREADSHEET_ID,
     resource: copyPasteResource,
   });
+
+  process.exit(0);
 
   const completePools = pools.map((pool, index) => {
     const orderedPool = {
@@ -118,7 +135,7 @@ async function addSpreadsheetRows(auth) {
   const resource = { values };
 
   //  console.log(values);
-  const output = await sheets.spreadsheets.values.update(
+  const output = await appAuthorization.spreadsheets.values.update(
     {
       spreadsheetId: SPREADSHEET_ID,
       range: SHEET_NAME + "!C" + (endRowIndex + 1).toString(),

@@ -60,3 +60,35 @@ export async function getAuthorization() {
   oAuth2Client.setCredentials(JSON.parse(token));
   return oAuth2Client;
 }
+
+export async function getBottomRowIndex(
+  appAuthorization,
+  SPREADSHEET_ID,
+  SHEET_NAME,
+  endRowIndex
+) {
+  let value;
+  // do {
+  //   const request = {
+  //     spreadsheetId: SPREADSHEET_ID,
+  //     range: SHEET_NAME + "!A" + --endRowIndex,
+  //   };
+  //   console.log(request, endRowIndex);
+  //   const cellValue = await appAuthorization.spreadsheets.values.get(request);
+  //   value = cellValue.data.values;
+  // } while (!value);
+
+  const request1 = {
+    spreadsheetId: SPREADSHEET_ID,
+    range: SHEET_NAME + "!A1:A",
+  };
+  //console.log(request1, endRowIndex);
+  const cellValue1 = await appAuthorization.spreadsheets.values.get(request1);
+  //  console.table(cellValue1.data.values);
+
+  //find the 1st non-blank cell starting at the bottom of the sheet
+  //  let isCellEmpty = true;
+  //  while (isCellEmpty) {}
+
+  return cellValue1.data.values.length;
+}
