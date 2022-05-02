@@ -68,8 +68,9 @@ async function addPoolDatabaseRows(auth) {
     return { ...orderedPool };
   });
 
-  const values = [];
-  completePools.forEach((pool) => values.push(Object.values(pool)));
+  //  const values = [];
+  //completePools.map((pool) => values.push(Object.values(pool)));
+  const values = completePools.map((pool) => Object.values(pool));
 
   //console.log(values);
   const resource = { values };

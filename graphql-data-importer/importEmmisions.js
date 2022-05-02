@@ -1,3 +1,4 @@
+import e from "express";
 import { google } from "googleapis";
 import {
   getBlockForDate,
@@ -29,13 +30,13 @@ async function addEmmisionsDatabaseRows(auth) {
 
   /*  RUN FOR DATE ENTERED  */
   const { blockNumber, timestamp, runDateUTC } = await getBlockForDate(
-    new Date(2022, 3, 30) //(YYYY, MM-1, DD)
+    new Date(2022, 4, 1) //(YYYY, MM-1, DD)
   );
 
   /* RUN FOR CURRENT DATE */
   // const { blockNumber, timestamp, runDateUTC } = await getBlockForCurrentDate();
 
-  const pools = await getEmmisionsData(blockNumber);
+  const emmisions = await getEmmisionsData(blockNumber);
 
   const { databaseSheetId, lastRowIndex: startingAppendRow } =
     await getDataSheetProperties(appAuthorization, SPREADSHEET_ID, SHEET_NAME);
@@ -44,7 +45,56 @@ async function addEmmisionsDatabaseRows(auth) {
     appAuthorization,
     SPREADSHEET_ID,
     databaseSheetId,
-    pools.length,
+    emmisions.length,
     startingAppendRow
+  );
+
+  const xxx = emmisions.reduce((prev, curr) => {
+    if (curr.rewarder.rewardTokens.length === 0) {
+      const newobj = {
+        date: runDateUTC.format("MM/DD/YYYY"),
+        blockNumber: blockNumber,
+        timeStamp: timestamp.toString(),
+        allocPoint: curr.allocPoint,
+        pooladdress: curr.pair,
+        rewardPerSecond: "NA",
+        rewardSymbol: "NA",
+        rewardtokenaddress: "NA",
+      };
+      prev.push(newobj);
+    } else {
+      curr.rewarder.rewardTokens.map((item) => {
+        const newobj = {
+          date: runDateUTC.format("MM/DD/YYYY"),
+          blockNumber: blockNumber,
+          timeStamp: timestamp.toString(),
+          allocPoint: curr.allocPoint,
+          pooladdress: curr.pair,
+          rewardPerSecond: item.rewardPerSecond,
+          rewardSymbol: item.symbol,
+          rewardtokenaddress: item.token,
+        };
+        prev.push(newobj);
+      });
+    }
+    return prev;
+  }, []);
+
+  //  const values = [];
+  const values = xxx.map((item) => Object.values(item));
+
+  //console.log(values);
+  const resource = { values };
+
+  const output = await appAuthorization.spreadsheets.values.update(
+    {
+      spreadsheetId: SPREADSHEET_ID,
+      range: SHEET_NAME + "!B" + (startingAppendRow + 1).toString(),
+      valueInputOption: "USER_ENTERED",
+      resource: resource,
+    },
+    (err) => {
+      if (err) return console.log("The API returned an error: " + err);
+    }
   );
 }
