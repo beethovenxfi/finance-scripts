@@ -61,34 +61,77 @@ export async function getAuthorization() {
   return oAuth2Client;
 }
 
-export async function getBottomRowIndex(
+export async function getDataSheetProperties(
   appAuthorization,
   SPREADSHEET_ID,
-  SHEET_NAME,
-  endRowIndex
+  SHEET_NAME
 ) {
-  let value;
-  // do {
-  //   const request = {
-  //     spreadsheetId: SPREADSHEET_ID,
-  //     range: SHEET_NAME + "!A" + --endRowIndex,
-  //   };
-  //   console.log(request, endRowIndex);
-  //   const cellValue = await appAuthorization.spreadsheets.values.get(request);
-  //   value = cellValue.data.values;
-  // } while (!value);
+  const spreadsheetRequest = { spreadsheetId: SPREADSHEET_ID };
+  const spreadsheetProperties = await appAuthorization.spreadsheets.get(
+    spreadsheetRequest
+  );
 
-  const request1 = {
+  const databaseSheetProperites = spreadsheetProperties.data.sheets.find(
+    (sheet) => sheet.properties.title === SHEET_NAME
+  );
+
+  const databaseSheetId = databaseSheetProperites.properties.sheetId;
+
+  const request = {
     spreadsheetId: SPREADSHEET_ID,
     range: SHEET_NAME + "!A1:A",
   };
-  //console.log(request1, endRowIndex);
-  const cellValue1 = await appAuthorization.spreadsheets.values.get(request1);
-  //  console.table(cellValue1.data.values);
+  const cellValue = await appAuthorization.spreadsheets.values.get(request);
 
-  //find the 1st non-blank cell starting at the bottom of the sheet
-  //  let isCellEmpty = true;
-  //  while (isCellEmpty) {}
+  const lastRowIndex = cellValue.data.values.length;
 
-  return cellValue1.data.values.length;
+  return { databaseSheetId, lastRowIndex };
+}
+
+export async function copyPasteNewRows(
+  appAuthorization,
+  SPREADSHEET_ID,
+  databaseSheetId,
+  rowToInsert,
+  startingAppendRow
+) {
+  //For this funciton to work correctly at least one blank row at the bottom of the sheet is required
+  const copyPasteResource = {
+    requests: [
+      {
+        clearBasicFilter: {
+          sheetId: databaseSheetId,
+        },
+      },
+      {
+        appendDimension: {
+          sheetId: databaseSheetId,
+          dimension: "ROWS",
+          length: rowToInsert,
+        },
+      },
+      {
+        copyPaste: {
+          source: {
+            sheetId: databaseSheetId,
+            startRowIndex: startingAppendRow - 1,
+            endRowIndex: startingAppendRow,
+            startColumnIndex: 0,
+          },
+          destination: {
+            sheetId: databaseSheetId,
+            startRowIndex: startingAppendRow,
+            endRowIndex: startingAppendRow + rowToInsert,
+          },
+          pasteType: "PASTE_FORMULA",
+          pasteOrientation: "NORMAL",
+        },
+      },
+    ],
+  };
+
+  const result = await appAuthorization.spreadsheets.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    resource: copyPasteResource,
+  });
 }
