@@ -38,6 +38,41 @@ async function addEmmisionsDatabaseRows(auth) {
 
   const emmisions = await getEmmisionsData(blockNumber);
 
+  const values = emmisions
+    .reduce((prev, curr) => {
+      if (curr.rewarder.rewardTokens.length === 0) {
+        const newobj = {
+          date: runDateUTC.format("MM/DD/YYYY"),
+          blockNumber: blockNumber,
+          timeStamp: timestamp.toString(),
+          allocPoint: curr.allocPoint,
+          pooladdress: curr.pair,
+          rewardPerSecond: "NA",
+          rewardSymbol: "NA",
+          rewardtokenaddress: "NA",
+        };
+        prev.push(newobj);
+      } else {
+        curr.rewarder.rewardTokens.map((item) => {
+          const newobj = {
+            date: runDateUTC.format("MM/DD/YYYY"),
+            blockNumber: blockNumber,
+            timeStamp: timestamp.toString(),
+            allocPoint: curr.allocPoint,
+            pooladdress: curr.pair,
+            rewardPerSecond: item.rewardPerSecond,
+            rewardSymbol: item.symbol,
+            rewardtokenaddress: item.token,
+          };
+          prev.push(newobj);
+        });
+      }
+      return prev;
+    }, [])
+    .map((item) => Object.values(item));
+
+  const resource = { values };
+
   const { databaseSheetId, lastRowIndex: startingAppendRow } =
     await getDataSheetProperties(appAuthorization, SPREADSHEET_ID, SHEET_NAME);
 
@@ -45,46 +80,9 @@ async function addEmmisionsDatabaseRows(auth) {
     appAuthorization,
     SPREADSHEET_ID,
     databaseSheetId,
-    emmisions.length,
+    values.length,
     startingAppendRow
   );
-
-  const xxx = emmisions.reduce((prev, curr) => {
-    if (curr.rewarder.rewardTokens.length === 0) {
-      const newobj = {
-        date: runDateUTC.format("MM/DD/YYYY"),
-        blockNumber: blockNumber,
-        timeStamp: timestamp.toString(),
-        allocPoint: curr.allocPoint,
-        pooladdress: curr.pair,
-        rewardPerSecond: "NA",
-        rewardSymbol: "NA",
-        rewardtokenaddress: "NA",
-      };
-      prev.push(newobj);
-    } else {
-      curr.rewarder.rewardTokens.map((item) => {
-        const newobj = {
-          date: runDateUTC.format("MM/DD/YYYY"),
-          blockNumber: blockNumber,
-          timeStamp: timestamp.toString(),
-          allocPoint: curr.allocPoint,
-          pooladdress: curr.pair,
-          rewardPerSecond: item.rewardPerSecond,
-          rewardSymbol: item.symbol,
-          rewardtokenaddress: item.token,
-        };
-        prev.push(newobj);
-      });
-    }
-    return prev;
-  }, []);
-
-  //  const values = [];
-  const values = xxx.map((item) => Object.values(item));
-
-  //console.log(values);
-  const resource = { values };
 
   const output = await appAuthorization.spreadsheets.values.update(
     {

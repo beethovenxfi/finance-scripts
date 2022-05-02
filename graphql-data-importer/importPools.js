@@ -36,17 +36,6 @@ async function addPoolDatabaseRows(auth) {
 
   const pools = await getAllPools(blockNumber);
 
-  const { databaseSheetId, lastRowIndex: startingAppendRow } =
-    await getDataSheetProperties(appAuthorization, SPREADSHEET_ID, SHEET_NAME);
-
-  await copyPasteNewRows(
-    appAuthorization,
-    SPREADSHEET_ID,
-    databaseSheetId,
-    pools.length,
-    startingAppendRow
-  );
-
   const completePools = pools.map((pool, index) => {
     const orderedPool = {
       rank: (index + 1).toString(),
@@ -68,14 +57,21 @@ async function addPoolDatabaseRows(auth) {
     return { ...orderedPool };
   });
 
-  //  const values = [];
-  //completePools.map((pool) => values.push(Object.values(pool)));
   const values = completePools.map((pool) => Object.values(pool));
 
-  //console.log(values);
   const resource = { values };
 
-  //  console.log(values);
+  const { databaseSheetId, lastRowIndex: startingAppendRow } =
+    await getDataSheetProperties(appAuthorization, SPREADSHEET_ID, SHEET_NAME);
+
+  await copyPasteNewRows(
+    appAuthorization,
+    SPREADSHEET_ID,
+    databaseSheetId,
+    pools.length,
+    startingAppendRow
+  );
+
   const output = await appAuthorization.spreadsheets.values.update(
     {
       spreadsheetId: SPREADSHEET_ID,
