@@ -9,11 +9,12 @@ const SCOPES = ["https://www.googleapis.com/auth/spreadsheets"];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
-const TOKEN_PATH = "./token.json";
+const TOKEN_FILE = new URL("token.json", import.meta.url);
+const CREDENTIALS_FILE = new URL("credentials.json", import.meta.url);
 
 async function readCredentials() {
   try {
-    const credentials = await fs.readFileSync("./credentials.json");
+    const credentials = await fs.readFileSync(CREDENTIALS_FILE);
     return JSON.parse(credentials);
   } catch (err) {
     console.error("Failed to read credentials file - ", err);
@@ -32,7 +33,7 @@ export async function getAuthorization() {
 
   let token;
   try {
-    token = await fs.readFileSync(TOKEN_PATH);
+    token = await fs.readFileSync(TOKEN_FILE);
   } catch {
     const authUrl = oAuth2Client.generateAuthUrl({
       access_type: "offline",
@@ -44,8 +45,8 @@ export async function getAuthorization() {
       const { tokens } = await oAuth2Client.getToken(code);
       oAuth2Client.setCredentials(tokens);
       try {
-        await fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
-        console.log("Token stored to", TOKEN_PATH);
+        await fs.writeFileSync(TOKEN_FILE, JSON.stringify(tokens));
+        console.log("Token stored to", TOKEN_FILE);
         return oAuth2Client;
       } catch (err) {
         console.error(err);
@@ -64,7 +65,9 @@ export async function getAuthorization() {
 export async function getDataSheetProperties(
   appAuthorization,
   SPREADSHEET_ID,
-  SHEET_NAME
+  SHEET_NAME,
+  timestamp,
+  timestampColumn
 ) {
   const spreadsheetRequest = { spreadsheetId: SPREADSHEET_ID };
   const spreadsheetProperties = await appAuthorization.spreadsheets.get(
@@ -79,13 +82,17 @@ export async function getDataSheetProperties(
 
   const request = {
     spreadsheetId: SPREADSHEET_ID,
-    range: SHEET_NAME + "!A1:A",
+    range: SHEET_NAME + "!" + timestampColumn + "1:" + timestampColumn,
   };
   const cellValue = await appAuthorization.spreadsheets.values.get(request);
 
+  const isTimestampInSheet = cellValue.data.values
+    .flat()
+    .includes(timestamp.toString());
+
   const lastRowIndex = cellValue.data.values.length;
 
-  return { databaseSheetId, lastRowIndex };
+  return { databaseSheetId, lastRowIndex, isTimestampInSheet };
 }
 
 export async function copyPasteNewRows(

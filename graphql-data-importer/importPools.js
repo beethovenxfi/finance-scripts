@@ -61,8 +61,22 @@ async function addPoolDatabaseRows(auth) {
 
   const resource = { values };
 
-  const { databaseSheetId, lastRowIndex: startingAppendRow } =
-    await getDataSheetProperties(appAuthorization, SPREADSHEET_ID, SHEET_NAME);
+  const {
+    databaseSheetId,
+    lastRowIndex: startingAppendRow,
+    isTimestampInSheet,
+  } = await getDataSheetProperties(
+    appAuthorization,
+    SPREADSHEET_ID,
+    SHEET_NAME,
+    timestamp,
+    "F"
+  );
+
+  if (isTimestampInSheet) {
+    console.log("data already exists in sheet. import terminated");
+    return;
+  }
 
   await copyPasteNewRows(
     appAuthorization,
