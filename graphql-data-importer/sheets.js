@@ -62,18 +62,25 @@ export async function getAuthorization() {
   return oAuth2Client;
 }
 
-export async function getDataSheetProperties(
+export async function getSpreadsheetProperites(
   appAuthorization,
-  SPREADSHEET_ID,
-  SHEET_NAME,
-  timestamp,
-  timestampColumn
+  SPREADSHEET_ID
 ) {
   const spreadsheetRequest = { spreadsheetId: SPREADSHEET_ID };
   const spreadsheetProperties = await appAuthorization.spreadsheets.get(
     spreadsheetRequest
   );
 
+  return spreadsheetProperties;
+}
+
+export async function getDataSheetProperties(
+  appAuthorization,
+  spreadsheetProperties,
+  SHEET_NAME,
+  timestamp,
+  timestampColumn
+) {
   const databaseSheetProperites = spreadsheetProperties.data.sheets.find(
     (sheet) => sheet.properties.title === SHEET_NAME
   );
@@ -81,16 +88,16 @@ export async function getDataSheetProperties(
   const databaseSheetId = databaseSheetProperites.properties.sheetId;
 
   const request = {
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId: spreadsheetProperties.data.spreadsheetId,
     range: SHEET_NAME + "!" + timestampColumn + "1:" + timestampColumn,
   };
   const cellValue = await appAuthorization.spreadsheets.values.get(request);
 
+  const lastRowIndex = cellValue.data.values.length;
+
   const isTimestampInSheet = cellValue.data.values
     .flat()
     .includes(timestamp.toString());
-
-  const lastRowIndex = cellValue.data.values.length;
 
   return { databaseSheetId, lastRowIndex, isTimestampInSheet };
 }
@@ -121,8 +128,8 @@ export async function copyPasteNewRows(
         copyPaste: {
           source: {
             sheetId: databaseSheetId,
-            startRowIndex: startingAppendRow - 1,
-            endRowIndex: startingAppendRow,
+            startRowIndex: 1,
+            endRowIndex: 2,
             startColumnIndex: 0,
           },
           destination: {

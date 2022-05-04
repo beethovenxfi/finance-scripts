@@ -1,6 +1,11 @@
 import { GraphQLClient, gql } from "graphql-request";
 import moment from "moment-timezone";
 
+const BEETHOVENX_ENDPOINT =
+  "https://graph-node.beets-ftm-node.com/subgraphs/name/beethovenx";
+const MASTERCHEF_ENDPOINT =
+  "https://graph-node.beets-ftm-node.com/subgraphs/name/masterchefV2";
+
 export async function getBlockForCurrentDate() {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 1);
@@ -44,11 +49,7 @@ export async function getAllPools(blockNumber) {
     }
   `;
 
-  const endpoint =
-    "https://graph-node.beets-ftm-node.com/subgraphs/name/beethovenx";
-
-  const client = new GraphQLClient(endpoint);
-
+  const client = new GraphQLClient(BEETHOVENX_ENDPOINT);
   const variables = { blocknumber: Number(blockNumber) };
 
   const response = await client.request(getPoolsQuery, variables);
@@ -56,9 +57,9 @@ export async function getAllPools(blockNumber) {
   return response.pools;
 }
 
-export async function getEmmisionsData(blockNumber) {
-  const getEmmisionsQuery = gql`
-    query getEmmisions($blocknumber: Int!) {
+export async function getEmissionsData(blockNumber) {
+  const getEmissionsQuery = gql`
+    query getEmissions($blocknumber: Int!) {
       pools(block: { number: $blocknumber }, where: { rewarder_gte: "0" }) {
         pair
         allocPoint
@@ -72,17 +73,55 @@ export async function getEmmisionsData(blockNumber) {
       }
     }
   `;
+  // const client = new GraphQLClient(
+  //   "https://graph-node.beets-ftm-node.com/subgraphs/name/masterchefV2"
+  // );
 
-  const endpoint =
-    "https://graph-node.beets-ftm-node.com/subgraphs/name/masterchefV2";
-
-  const client = new GraphQLClient(endpoint);
-
+  const client = new GraphQLClient(MASTERCHEF_ENDPOINT);
   const variables = { blocknumber: Number(blockNumber) };
-
-  const response = await client.request(getEmmisionsQuery, variables);
+  const response = await client.request(getEmissionsQuery, variables);
 
   return response.pools;
+}
+
+export async function getTokenData(blockNumber) {
+  const getTokensQuery = gql`
+    query getTokens($blocknumber: Int!) {
+      tokens(first: 1000, skip: 0, block: { number: $blocknumber }) {
+        symbol
+        name
+        address
+        decimals
+        latestPrice {
+          priceUSD
+        }
+      }
+    }
+  `;
+
+  const client = new GraphQLClient(BEETHOVENX_ENDPOINT);
+  const variables = { blocknumber: Number(blockNumber) };
+
+  const response = await client.request(getTokensQuery, variables);
+
+  return response.tokens;
+}
+
+export async function getBeetsPerBlock(blockNumber) {
+  const getBeetsPerBlockQuery = gql`
+    query getBeetsPerBlock($blocknumber: Int!) {
+      masterChefs(block: { number: $blocknumber }) {
+        beetsPerBlock
+      }
+    }
+  `;
+
+  const client = new GraphQLClient(MASTERCHEF_ENDPOINT);
+  const variables = { blocknumber: Number(blockNumber) };
+
+  const response = await client.request(getBeetsPerBlockQuery, variables);
+
+  return response.masterChefs;
 }
 
 function blockQuery(timestamp) {
@@ -105,5 +144,10 @@ async function getBlockForTimestamp(timestamp) {
 
   const client = new GraphQLClient(endpoint);
   const data = await client.request(blockQuery(timestamp));
+
+  if (!data.blocks || data.blocks.length === 0) {
+    console.log("block not found for timestamp: ", timestamp);
+    process.exit(1);
+  }
   return data.blocks[0].number;
 }
