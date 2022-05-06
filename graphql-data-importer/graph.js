@@ -2,9 +2,14 @@ import { GraphQLClient, gql } from "graphql-request";
 import moment from "moment-timezone";
 
 const BEETHOVENX_ENDPOINT =
-  "https://graph-node.beets-ftm-node.com/subgraphs/name/beethovenx";
+  //  "https://graph-node.beets-ftm-node.com/subgraphs/name/beethovenx";
+  "https://api.thegraph.com/subgraphs/name/danielmkm/beethoven-x";
 const MASTERCHEF_ENDPOINT =
-  "https://graph-node.beets-ftm-node.com/subgraphs/name/masterchefV2";
+  //"https://graph-node.beets-ftm-node.com/subgraphs/name/masterchefV2";
+  "https://api.thegraph.com/subgraphs/name/beethovenxfi/masterchefv2";
+const FANTOM_BLOCKS_ENDPOINT =
+  //  "https://graph-node.beets-ftm-node.com/subgraphs/name/fantom-blocks";
+  "https://api.thegraph.com/subgraphs/name/publu/fantom-blocks";
 
 export async function getBlockForCurrentDate() {
   const startDate = new Date();
@@ -73,9 +78,6 @@ export async function getEmissionsData(blockNumber) {
       }
     }
   `;
-  // const client = new GraphQLClient(
-  //   "https://graph-node.beets-ftm-node.com/subgraphs/name/masterchefV2"
-  // );
 
   const client = new GraphQLClient(MASTERCHEF_ENDPOINT);
   const variables = { blocknumber: Number(blockNumber) };
@@ -139,8 +141,7 @@ query getblock {
 }
 
 async function getBlockForTimestamp(timestamp) {
-  const endpoint =
-    "https://graph-node.beets-ftm-node.com/subgraphs/name/fantom-blocks";
+  const endpoint = FANTOM_BLOCKS_ENDPOINT;
 
   const client = new GraphQLClient(endpoint);
   const data = await client.request(blockQuery(timestamp));

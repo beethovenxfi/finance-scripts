@@ -19,13 +19,14 @@ async function importPools() {
 }
 
 async function addPoolDatabaseRows(auth) {
-  //const SPREADSHEET_ID = "16T1WK89Q1fxXYkJ79cz7NCGatVKKgZUCkOmGUyQ5YZQ"; //TEST POOL SHEET
+  console.log("\nStart Pool Import", new Date());
+
+  //  const SPREADSHEET_ID = "16T1WK89Q1fxXYkJ79cz7NCGatVKKgZUCkOmGUyQ5YZQ"; //TEST POOL SHEET
 
   const SPREADSHEET_ID = "1YGyVDUQuJoQRj2sUMpWnCO-8O_fcVW02-fhdb9Uf2_A"; //LIVE DATA SHEET ADDRESS
 
   const SHEET_NAME = "Database";
 
-  console.log("\nStart Pool Import");
   const appAuthorization = google.sheets({ version: "v4", auth });
 
   /*  RUN FOR DATE ENTERED  */

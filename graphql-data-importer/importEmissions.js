@@ -1,4 +1,3 @@
-import e from "express";
 import { google } from "googleapis";
 import {
   getBlockForDate,
@@ -14,6 +13,8 @@ import {
   copyPasteNewRows,
 } from "./sheets.js";
 
+import moment from "moment-timezone";
+
 importEmissions();
 
 async function importEmissions() {
@@ -22,31 +23,31 @@ async function importEmissions() {
 }
 
 async function addEmissionsDatabaseRows(auth) {
-  const SPREADSHEET_ID = "11TTW4_yXFGuhw6H22PQ7fdE3VF00Q3rt3WNzI2O52Lo"; //TEST EMISSIONS SHEET
+  console.log("\nStart Emissions Import", new Date());
 
-  //const SPREADSHEET_ID = "1YGyVDUQuJoQRj2sUMpWnCO-8O_fcVW02-fhdb9Uf2_A"; //LIVE DATA SHEET ADDRESS
+  //const SPREADSHEET_ID = "1pFpbfygW8YiZBFoqjqxSnPSNaiQ6jX24WNzyt-jeUXo"; //TEST EMISSIONS SHEET
+
+  const SPREADSHEET_ID = "14zt5KeunuLCcVwleIuxF4hKVdUYPtIpMcLcKgiRKXAM"; //LIVE DATA SHEET ADDRESS
 
   const SHEET_NAME = "EmissionsData";
 
-  console.log("\nStart Emissions Import");
   const appAuthorization = google.sheets({ version: "v4", auth });
 
   /*  RUN FOR DATE ENTERED  */
-  //   const { blockNumber, timestamp, runDateUTC } = await getBlockForDate(
-  //     new Date(2022, 4, 3) //(YYYY, MM-1, DD)
-  //   );
+  // const { blockNumber, timestamp, runDateUTC } = await getBlockForDate(
+  //   new Date(2022, 4, 6)  ); //(YYYY, MM-1, DD)
 
   /* RUN FOR CURRENT DATE */
   const { blockNumber, timestamp, runDateUTC } = await getBlockForCurrentDate();
-
-  let databaseSheetId = 0;
-  let lastRowIndex = 0;
-  let isTimestampInSheet = false;
 
   const spreadsheetProperties = await getSpreadsheetProperites(
     appAuthorization,
     SPREADSHEET_ID
   );
+
+  let databaseSheetId = 0;
+  let lastRowIndex = 0;
+  let isTimestampInSheet = false;
 
   ({ databaseSheetId, lastRowIndex, isTimestampInSheet } =
     await getDataSheetProperties(
