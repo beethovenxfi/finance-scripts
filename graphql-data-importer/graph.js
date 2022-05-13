@@ -3,13 +3,13 @@ import moment from "moment-timezone";
 
 const BEETHOVENX_ENDPOINT =
   //  "https://graph-node.beets-ftm-node.com/subgraphs/name/beethovenx";
-  "https://api.thegraph.com/subgraphs/name/danielmkm/beethoven-x";
+  "https://api.thegraph.com/subgraphs/name/beethovenxfi/beethovenx";
 const MASTERCHEF_ENDPOINT =
   //"https://graph-node.beets-ftm-node.com/subgraphs/name/masterchefV2";
   "https://api.thegraph.com/subgraphs/name/beethovenxfi/masterchefv2";
 const FANTOM_BLOCKS_ENDPOINT =
   //  "https://graph-node.beets-ftm-node.com/subgraphs/name/fantom-blocks";
-  "https://api.thegraph.com/subgraphs/name/publu/fantom-blocks";
+  "https://api.thegraph.com/subgraphs/name/beethovenxfi/fantom-blocks";
 
 export async function getBlockForCurrentDate() {
   const startDate = new Date();
