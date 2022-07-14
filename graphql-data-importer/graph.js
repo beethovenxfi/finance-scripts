@@ -35,7 +35,7 @@ export async function getAllPools(blockNumber) {
         orderDirection: desc
         orderBy: totalLiquidity
         block: { number: $blocknumber }
-        where: { totalLiquidity_gt: 1 }
+        where: { totalLiquidity_gt: 9999 }
       ) {
         name
         address
